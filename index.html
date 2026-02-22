@@ -191,7 +191,7 @@
         </div>
 
         <!-- Настройки (Скрываемые) -->
-        <details class="group premium-glass overflow-hidden [&_summary::-webkit-details-marker]:hidden">
+        <details id="admin-panel" class="hidden group premium-glass overflow-hidden [&_summary::-webkit-details-marker]:hidden">
             <summary class="p-6 cursor-pointer text-xs uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors list-none flex justify-between items-center outline-none">
                 <span class="flex items-center">
                     <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -244,6 +244,12 @@
     </div>
 
     <script>
+        // Проверка прав администратора по секретной ссылке
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('admin') === 'julepick') {
+            document.getElementById('admin-panel').classList.remove('hidden');
+        }
+
         // DOM Элементы
         const elSellPrice = document.getElementById('price-sell');
         const elBuyPrice = document.getElementById('price-buy');
@@ -534,6 +540,20 @@
 
         elCalcAmount.addEventListener('input', updateCalculator);
 
+        // Функция загрузки сохраненных настроек из памяти браузера
+        function loadSettings() {
+            const keys = ['cfg-zero-point', 'cfg-base-price', 'cfg-multiplier', 'cfg-spread', 'cfg-min', 'cfg-max'];
+            keys.forEach(key => {
+                const savedValue = localStorage.getItem(key);
+                if (savedValue !== null) {
+                    document.getElementById(key).value = savedValue;
+                }
+            });
+        }
+        
+        // Загружаем настройки сразу при старте страницы
+        loadSettings();
+
         setInterval(() => {
             countdownTimer--;
             if (countdownTimer <= 0) {
@@ -544,7 +564,12 @@
         }, 1000);
 
         document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', () => {
+            input.addEventListener('input', (e) => {
+                // Сохраняем измененную настройку в локальное хранилище
+                if(e.target.id.startsWith('cfg-')) {
+                    localStorage.setItem(e.target.id, e.target.value);
+                }
+
                 const currentRate = parseFloat(elRealRate.textContent);
                 if (!isNaN(currentRate)) {
                     calculatePrices(currentRate);
