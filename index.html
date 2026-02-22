@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPCOIN TOWER | Private Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030303; 
+            color: #e2e8f0;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .font-numbers { font-family: 'Space Grotesk', sans-serif; }
+
+        /* Эксклюзивные фоновые сферы (глубокие, приглушенные тона) */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+            pointer-events: none;
+            animation: float 25s infinite ease-in-out alternate;
+        }
+        .orb-1 { width: 50vw; height: 50vw; background: rgba(212, 175, 55, 0.05); top: -20vh; left: -10vw; }
+        .orb-2 { width: 40vw; height: 40vw; background: rgba(255, 255, 255, 0.02); bottom: -10vh; right: -5vw; animation-delay: -7s; }
+        .orb-3 { width: 45vw; height: 45vw; background: rgba(30, 41, 59, 0.15); top: 40vh; left: 20vw; animation-delay: -12s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(20px, 30px) scale(1.05); }
+        }
+
+        /* Премиальное темное стекло (Ultra-premium Glass) */
+        .premium-glass {
+            background: linear-gradient(145deg, rgba(20, 20, 22, 0.6) 0%, rgba(5, 5, 5, 0.8) 100%);
+            backdrop-filter: blur(40px) saturate(120%);
+            -webkit-backdrop-filter: blur(40px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.02);
+            border-radius: 1rem;
+        }
+
+        .gold-text {
+            color: #D4AF37;
+        }
+
+        @keyframes flash-elite {
+            0% { background-color: rgba(212, 175, 55, 0.08); border-color: rgba(212, 175, 55, 0.3); }
+            100% { background-color: rgba(20, 20, 22, 0.6); border-color: rgba(255, 255, 255, 0.03); }
+        }
+        .update-flash {
+            animation: flash-elite 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Утонченный скроллбар */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.5); }
+
+        /* Скрытие стрелок у инпута чисел */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 selection:bg-[#D4AF37]/30 selection:text-[#f3e5ab]">
+
+    <!-- Фоновые элементы -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="max-w-4xl mx-auto space-y-8">
+        
+        <!-- Шапка -->
+        <header class="text-center space-y-4 pb-4 pt-6">
+            <h1 class="text-3xl md:text-4xl font-light tracking-[0.3em] uppercase text-white">
+                KPCOIN <span class="font-medium gold-text">TOWER</span>
+            </h1>
+            <p class="text-slate-500 text-xs uppercase tracking-[0.2em]">Закрытый торговый терминал</p>
+            <div class="inline-flex items-center space-x-3 premium-glass rounded-full px-6 py-2 text-xs font-medium mt-4">
+                <div id="status-dot" class="w-1.5 h-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.8)]"></div>
+                <span id="status-text" class="text-slate-300 tracking-[0.1em] uppercase">Синхронизация</span>
+            </div>
+        </header>
+
+        <!-- Главные цены -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Блок ПРОДАЖИ игрокам (Ask) -->
+            <div id="sell-card" class="premium-glass p-8 text-center transition-all relative overflow-hidden group">
+                <div class="flex items-center justify-center space-x-2 mb-6">
+                    <div class="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.8)]"></div>
+                    <h2 class="text-slate-400 font-medium uppercase tracking-[0.2em] text-xs">Ask / Продажа</h2>
+                </div>
+                <div class="text-5xl md:text-6xl font-light text-white tracking-tight font-numbers" id="price-sell">
+                    -- <span class="text-2xl text-slate-600">АР</span>
+                </div>
+                <div class="w-12 h-[1px] bg-white/10 mx-auto mt-6 mb-4"></div>
+                <p class="text-slate-500 text-xs uppercase tracking-widest">Выдаем коины</p>
+            </div>
+
+            <!-- Блок ПОКУПКИ у игроков (Bid) -->
+            <div id="buy-card" class="premium-glass p-8 text-center transition-all relative overflow-hidden">
+                <div class="flex items-center justify-center space-x-2 mb-6">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]"></div>
+                    <h2 class="text-slate-400 font-medium uppercase tracking-[0.2em] text-xs">Bid / Покупка</h2>
+                </div>
+                <div class="text-5xl md:text-6xl font-light text-white tracking-tight font-numbers" id="price-buy">
+                    -- <span class="text-2xl text-slate-600">АР</span>
+                </div>
+                <div class="w-12 h-[1px] bg-white/10 mx-auto mt-6 mb-4"></div>
+                <p class="text-slate-500 text-xs uppercase tracking-widest">Скупаем коины</p>
+            </div>
+        </div>
+
+        <!-- Калькулятор сделок -->
+        <div class="premium-glass p-8">
+            <div class="flex items-center mb-8">
+                <svg class="w-5 h-5 gold-text mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                <h3 class="text-sm font-medium text-white uppercase tracking-[0.2em]">Расчет сделки</h3>
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-8 items-center">
+                <div class="w-full md:w-1/3 flex flex-col items-center">
+                    <label class="text-[10px] text-slate-500 font-medium uppercase tracking-widest mb-2">Количество</label>
+                    <input type="number" id="calc-amount" min="1" value="1" class="w-32 bg-transparent border-b border-white/10 text-center text-white text-4xl font-light font-numbers transition-all focus:border-[#D4AF37] focus:outline-none pb-2">
+                </div>
+                
+                <div class="w-px h-16 bg-white/5 hidden md:block"></div>
+                
+                <div class="w-full md:w-2/3 flex flex-col gap-4 w-full">
+                    <div class="flex justify-between items-end border-b border-white/5 pb-3">
+                        <div class="flex flex-col">
+                            <span class="text-xs text-slate-500 uppercase tracking-widest mb-1">К получению</span>
+                            <span class="text-[10px] text-slate-600">Игрок платит вам АРы</span>
+                        </div>
+                        <span id="calc-sell-result" class="font-numbers text-2xl text-white">--</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div class="flex flex-col">
+                            <span class="text-xs text-slate-500 uppercase tracking-widest mb-1">К оплате</span>
+                            <span class="text-[10px] text-slate-600">Вы платите игроку АРы</span>
+                        </div>
+                        <span id="calc-buy-result" class="font-numbers text-2xl text-white">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- График курса -->
+        <div class="premium-glass p-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 gold-text mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                    <h3 class="text-sm font-medium text-white uppercase tracking-[0.2em]">Динамика рынка</h3>
+                </div>
+                
+                <div class="flex space-x-1 border border-white/5 rounded-md p-1 bg-black/20">
+                    <button onclick="setChartMode('live')" id="btn-mode-live" class="px-4 py-1.5 text-[10px] uppercase tracking-widest rounded bg-white/10 text-white transition-all">Live</button>
+                    <button onclick="setChartMode('1d')" id="btn-mode-1d" class="px-4 py-1.5 text-[10px] uppercase tracking-widest rounded text-slate-500 hover:text-white transition-all">Дни</button>
+                    <button onclick="setChartMode('1w')" id="btn-mode-1w" class="px-4 py-1.5 text-[10px] uppercase tracking-widest rounded text-slate-500 hover:text-white transition-all">Нед</button>
+                    <button onclick="setChartMode('1M')" id="btn-mode-1M" class="px-4 py-1.5 text-[10px] uppercase tracking-widest rounded text-slate-500 hover:text-white transition-all">Мес</button>
+                </div>
+            </div>
+            <div class="relative h-64 w-full">
+                <canvas id="priceChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Инфо-панель -->
+        <div class="premium-glass py-4 px-8 flex flex-col md:flex-row justify-between items-center text-xs tracking-widest uppercase text-slate-500">
+            <div class="mb-3 md:mb-0 flex items-center">
+                <span>Рыночная цена:</span>
+                <span id="fair-price" class="text-white ml-2 font-numbers text-sm">-- АР</span>
+            </div>
+            <div class="flex items-center">
+                <span>Обновление:</span>
+                <span id="countdown" class="text-[#D4AF37] ml-2 font-numbers text-sm">10</span>с
+            </div>
+        </div>
+
+        <!-- Настройки (Скрываемые) -->
+        <details class="group premium-glass overflow-hidden [&_summary::-webkit-details-marker]:hidden">
+            <summary class="p-6 cursor-pointer text-xs uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors list-none flex justify-between items-center outline-none">
+                <span class="flex items-center">
+                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Терминал управления (Только для JIuPuK)
+                </span>
+                <span class="transform group-open:rotate-180 transition-transform duration-300">▼</span>
+            </summary>
+            <div class="p-8 pt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 border-t border-white/5 bg-black/40">
+                
+                <div class="col-span-1 md:col-span-2 lg:col-span-3 flex justify-between items-end border-b border-white/5 pb-4 mb-4">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-widest">Текущий индекс</span>
+                    <span id="real-eurusdt" class="font-numbers text-xl gold-text tracking-widest">--</span>
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[10px] text-slate-500 uppercase tracking-widest block border-l-2 border-[#D4AF37] pl-2">База индекса</label>
+                    <input type="number" step="0.0001" id="cfg-zero-point" value="1.17790" class="w-full bg-transparent border-b border-white/10 p-2 text-white font-numbers text-sm transition-colors focus:border-[#D4AF37] focus:outline-none">
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[10px] text-slate-500 uppercase tracking-widest block border-l-2 border-[#D4AF37] pl-2">База цены (АР)</label>
+                    <input type="number" id="cfg-base-price" value="20" class="w-full bg-transparent border-b border-white/10 p-2 text-white font-numbers text-sm transition-colors focus:border-[#D4AF37] focus:outline-none">
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[10px] text-slate-500 uppercase tracking-widest block border-l-2 border-[#D4AF37] pl-2">Плечо (x)</label>
+                    <input type="number" id="cfg-multiplier" value="100" class="w-full bg-transparent border-b border-white/10 p-2 text-white font-numbers text-sm transition-colors focus:border-[#D4AF37] focus:outline-none">
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[10px] text-slate-500 uppercase tracking-widest block border-l-2 border-[#D4AF37] pl-2">Спред (%)</label>
+                    <input type="number" step="0.1" id="cfg-spread" value="5" class="w-full bg-transparent border-b border-white/10 p-2 text-white font-numbers text-sm transition-colors focus:border-[#D4AF37] focus:outline-none">
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[10px] text-slate-500 uppercase tracking-widest block border-l-2 border-[#D4AF37] pl-2">Пол цены</label>
+                    <input type="number" id="cfg-min" value="5" class="w-full bg-transparent border-b border-white/10 p-2 text-white font-numbers text-sm transition-colors focus:border-[#D4AF37] focus:outline-none">
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[10px] text-slate-500 uppercase tracking-widest block border-l-2 border-[#D4AF37] pl-2">Потолок цены</label>
+                    <input type="number" id="cfg-max" value="60" class="w-full bg-transparent border-b border-white/10 p-2 text-white font-numbers text-sm transition-colors focus:border-[#D4AF37] focus:outline-none">
+                </div>
+            </div>
+        </details>
+
+        <div class="text-center text-[10px] text-slate-700 uppercase tracking-[0.3em] pb-8 pt-4">
+            Secured by Syndicate Protocol
+        </div>
+    </div>
+
+    <script>
+        // DOM Элементы
+        const elSellPrice = document.getElementById('price-sell');
+        const elBuyPrice = document.getElementById('price-buy');
+        const elFairPrice = document.getElementById('fair-price');
+        const elRealRate = document.getElementById('real-eurusdt');
+        const elCountdown = document.getElementById('countdown');
+        const elStatusText = document.getElementById('status-text');
+        const elStatusDot = document.getElementById('status-dot');
+        
+        const cardSell = document.getElementById('sell-card');
+        const cardBuy = document.getElementById('buy-card');
+
+        const elCalcAmount = document.getElementById('calc-amount');
+        const elCalcSellResult = document.getElementById('calc-sell-result');
+        const elCalcBuyResult = document.getElementById('calc-buy-result');
+
+        // Глобальные переменные для текущих цен
+        let currentAsk = 0;
+        let currentBid = 0;
+
+        // Переменные для графика
+        let currentChartMode = 'live'; 
+        let priceHistory = [];
+        let timeLabels = [];
+        let priceChart;
+        const maxDataPoints = 30; 
+
+        // Инициализация графика (Эксклюзивная золотая тема)
+        Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(212, 175, 55, 0.15)'); 
+        gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
+
+        priceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Цена',
+                    data: priceHistory,
+                    borderColor: '#D4AF37', 
+                    backgroundColor: gradient,
+                    borderWidth: 1.5,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0, 
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#030303',
+                    pointBorderColor: '#D4AF37',
+                    pointBorderWidth: 1.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(5, 5, 5, 0.9)',
+                        titleColor: '#64748b',
+                        bodyColor: '#D4AF37',
+                        titleFont: { size: 11, family: 'Inter', weight: 'normal' },
+                        bodyFont: { size: 16, family: 'Space Grotesk', weight: 'light' },
+                        padding: 12,
+                        cornerRadius: 4,
+                        borderColor: 'rgba(212, 175, 55, 0.2)',
+                        borderWidth: 1,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' АР';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#475569', font: { family: 'Space Grotesk', size: 10 }, maxTicksLimit: 8 }
+                    },
+                    y: {
+                        border: { display: false },
+                        grid: { color: 'rgba(255, 255, 255, 0.02)', drawBorder: false },
+                        ticks: { color: '#475569', font: { family: 'Space Grotesk', size: 10 }, padding: 15 }
+                    }
+                },
+                animation: { duration: 600, easing: 'easeOutQuart' }
+            }
+        });
+
+        // Конфигурация
+        const getCfg = () => ({
+            zeroPoint: parseFloat(document.getElementById('cfg-zero-point').value),
+            basePrice: parseFloat(document.getElementById('cfg-base-price').value),
+            multiplier: parseFloat(document.getElementById('cfg-multiplier').value),
+            spread: parseFloat(document.getElementById('cfg-spread').value) / 100, 
+            minPrice: parseFloat(document.getElementById('cfg-min').value),
+            maxPrice: parseFloat(document.getElementById('cfg-max').value),
+        });
+
+        let countdownTimer = 10;
+
+        function setStatus(text, colorHex, isError = false) {
+            elStatusText.textContent = text;
+            elStatusDot.style.backgroundColor = colorHex;
+            if(isError) {
+                elStatusDot.style.boxShadow = `0 0 8px ${colorHex}`;
+            } else {
+                elStatusDot.style.boxShadow = `0 0 8px rgba(212, 175, 55, 0.8)`;
+            }
+        }
+
+        async function fetchMarketData() {
+            try {
+                setStatus('Синхронизация', '#D4AF37');
+                
+                const secretEndpoint = atob('aHR0cHM6Ly9hcGkuYmluYW5jZS5jb20vYXBpL3YzL3RpY2tlci9wcmljZT9zeW1ib2w9RVVSVVNEVA==');
+                const response = await fetch(secretEndpoint);
+                if (!response.ok) throw new Error('Network error');
+                
+                const data = await response.json();
+                const currentEurUsdt = parseFloat(data.price);
+                
+                calculatePrices(currentEurUsdt);
+                setStatus('Синхронизировано', '#10b981'); // Изумрудный
+                
+                setTimeout(() => setStatus('Ожидание', '#64748b'), 2000);
+            } catch (error) {
+                console.error('Data error:', error);
+                setStatus('Сбой связи', '#e11d48', true); // Рубиновый
+            }
+        }
+
+        async function fetchHistoricalData(interval) {
+            try {
+                const secretKlineEndpoint = atob('aHR0cHM6Ly9hcGkuYmluYW5jZS5jb20vYXBpL3YzL2tsaW5lcz9zeW1ib2w9RVVSVVNEVA==');
+                const response = await fetch(`${secretKlineEndpoint}&interval=${interval}&limit=30`);
+                if (!response.ok) throw new Error('Network error');
+                
+                const klines = await response.json();
+                const cfg = getCfg();
+                
+                let newHistory = [];
+                let newLabels = [];
+
+                klines.forEach(kline => {
+                    const closeTime = new Date(kline[6]);
+                    const closePrice = parseFloat(kline[4]);
+
+                    const percentChangeDecimal = (closePrice - cfg.zeroPoint) / cfg.zeroPoint;
+                    let fairPrice = cfg.basePrice * (1 + (cfg.multiplier * percentChangeDecimal));
+                    fairPrice = Math.max(cfg.minPrice, Math.min(cfg.maxPrice, fairPrice));
+
+                    newHistory.push(parseFloat(fairPrice.toFixed(2)));
+
+                    let label = '';
+                    if (interval === '1d' || interval === '1w') {
+                        label = closeTime.getDate().toString().padStart(2, '0') + '.' + (closeTime.getMonth() + 1).toString().padStart(2, '0');
+                    } else if (interval === '1M') {
+                        const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+                        label = months[closeTime.getMonth()] + ' ' + closeTime.getFullYear().toString().slice(-2);
+                    }
+                    newLabels.push(label);
+                });
+
+                priceChart.data.labels = newLabels;
+                priceChart.data.datasets[0].data = newHistory;
+                priceChart.update();
+            } catch (error) {
+                console.error('History load error:', error);
+            }
+        }
+
+        function setChartMode(mode) {
+            currentChartMode = mode;
+            
+            ['live', '1d', '1w', '1M'].forEach(m => {
+                const btn = document.getElementById('btn-mode-' + m);
+                if (m === mode) {
+                    btn.className = "px-4 py-1.5 text-[10px] uppercase tracking-widest rounded bg-white/10 text-white transition-all";
+                } else {
+                    btn.className = "px-4 py-1.5 text-[10px] uppercase tracking-widest rounded text-slate-500 hover:text-white transition-all";
+                }
+            });
+
+            if (mode === 'live') {
+                priceChart.data.labels = [];
+                priceChart.data.datasets[0].data = [];
+                priceChart.update();
+                fetchMarketData();
+            } else {
+                fetchHistoricalData(mode);
+            }
+        }
+
+        function updateChartData(newPrice) {
+            if (currentChartMode !== 'live') return;
+
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                               now.getMinutes().toString().padStart(2, '0') + ':' + 
+                               now.getSeconds().toString().padStart(2, '0');
+
+            if (priceChart.data.datasets[0].data.length >= maxDataPoints) {
+                priceChart.data.datasets[0].data.shift();
+                priceChart.data.labels.shift();
+            }
+
+            priceChart.data.datasets[0].data.push(newPrice);
+            priceChart.data.labels.push(timeString);
+            priceChart.update();
+        }
+
+        function calculatePrices(currentEurUsdt) {
+            const cfg = getCfg();
+            
+            const percentChangeDecimal = (currentEurUsdt - cfg.zeroPoint) / cfg.zeroPoint;
+            let fairPrice = cfg.basePrice * (1 + (cfg.multiplier * percentChangeDecimal));
+            fairPrice = Math.max(cfg.minPrice, Math.min(cfg.maxPrice, fairPrice));
+            
+            const askPrice = fairPrice * (1 + cfg.spread);
+            const bidPrice = fairPrice * (1 - cfg.spread);
+
+            currentAsk = askPrice;
+            currentBid = bidPrice;
+
+            elRealRate.textContent = currentEurUsdt.toFixed(5);
+            elFairPrice.textContent = fairPrice.toFixed(2) + ' АР';
+            
+            elSellPrice.innerHTML = `${askPrice.toFixed(2)} <span class="text-2xl text-slate-600">АР</span>`;
+            elBuyPrice.innerHTML = `${bidPrice.toFixed(2)} <span class="text-2xl text-slate-600">АР</span>`;
+
+            updateChartData(parseFloat(fairPrice.toFixed(2)));
+
+            cardSell.classList.remove('update-flash');
+            cardBuy.classList.remove('update-flash');
+            void cardSell.offsetWidth; 
+            cardSell.classList.add('update-flash');
+            cardBuy.classList.add('update-flash');
+
+            updateCalculator();
+        }
+
+        function formatMinecraftAR(totalAr) {
+            if (isNaN(totalAr) || totalAr <= 0) return "--";
+            totalAr = Math.round(totalAr);
+
+            const stacks = Math.floor(totalAr / 64);
+            const remainder = totalAr % 64;
+
+            let stackStr = '';
+            if (stacks > 0) {
+                let form = 'ст.';
+                stackStr = `<span class="text-white">${stacks}</span><span class="text-xs text-slate-500 ml-1 mr-2">${form}</span>`;
+            }
+
+            let remStr = remainder > 0 ? `<span class="text-white">${remainder}</span><span class="text-xs text-slate-500 ml-1">АР</span>` : '';
+
+            if (stacks > 0 && remainder > 0) {
+                return `${stackStr}${remStr} <span class="text-xs font-inter opacity-30 ml-2">(${totalAr})</span>`;
+            } else if (stacks > 0) {
+                return `${stackStr} <span class="text-xs font-inter opacity-30 ml-2">(${totalAr})</span>`;
+            } else {
+                return `<span class="text-white">${totalAr}</span><span class="text-xs text-slate-500 ml-1">АР</span>`;
+            }
+        }
+
+        function updateCalculator() {
+            const amount = parseFloat(elCalcAmount.value);
+            if (isNaN(amount) || amount <= 0) {
+                elCalcSellResult.innerHTML = "--";
+                elCalcBuyResult.innerHTML = "--";
+                return;
+            }
+
+            const totalSell = amount * currentAsk;
+            const totalBuy = amount * currentBid;
+
+            elCalcSellResult.innerHTML = formatMinecraftAR(totalSell);
+            elCalcBuyResult.innerHTML = formatMinecraftAR(totalBuy);
+        }
+
+        elCalcAmount.addEventListener('input', updateCalculator);
+
+        setInterval(() => {
+            countdownTimer--;
+            if (countdownTimer <= 0) {
+                countdownTimer = 10;
+                fetchMarketData();
+            }
+            elCountdown.textContent = countdownTimer;
+        }, 1000);
+
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => {
+                const currentRate = parseFloat(elRealRate.textContent);
+                if (!isNaN(currentRate)) {
+                    calculatePrices(currentRate);
+                }
+                
+                if (currentChartMode !== 'live') {
+                    fetchHistoricalData(currentChartMode);
+                } else {
+                    priceChart.data.datasets[0].data = [];
+                    priceChart.data.labels = [];
+                }
+            });
+        });
+
+        fetchMarketData();
+
+    </script>
+</body>
+</html>
